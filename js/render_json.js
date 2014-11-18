@@ -378,45 +378,4 @@ function Render_json(divx , idx, objx, controlsx , callbackx){
 		return wrapper_div;
 	};
 	return this;
-}
-
-
-
-function render_json(div , id, obj, controls , callback){
-	var div_map = {};
-	var wrapper_div = document.createElement("div");
-	wrapper_div.className="data_holder";
-	if(is_string(id)){
-		if(id) wrapper_div.id = id;
-	}
-	else if(is_array(id)){
-		if(id[0]) wrapper_div.id = id[0];
-		wrapper_div.className += id[1];
-	}
-
-	var a = get_json_as_dom(obj);
-	wrapper_div.appendChild(a);
-	if(div)
-		div.appendChild(wrapper_div);
-	
-	var _controls=null;
-	if(controls){
-		var temp = render_controls(controls);
-		wrapper_div.appendChild(temp[0]);
-		_controls = temp[1];
-		_controls.redraw_json = function(new_obj){
-			new_obj = new_obj ? new_obj :  obj;
-			wrapper_div.removeChild(wrapper_div.childNodes[0]);
-			wrapper_div.insertBefore( get_json_as_dom(new_obj), wrapper_div.childNodes[0]);
-			callback(wrapper_div, _controls, obj);
-		};
-	
-	}
-	if(callback){
-		setTimeout(function(){
-			callback(wrapper_div, _controls, obj);
-		} , 0);
-	}
-	//add controls div
-	return wrapper_div;
 };
