@@ -10,6 +10,65 @@
 <link rel="stylesheet" href="./css/bootstrap.css">
 <link rel="stylesheet" href="./css/app.css">
 <link href="css/jquery.datetimepicker.css" rel="stylesheet">
+<style>
+ .can_wrap{
+     white-space:normal;
+ }
+ .no_wrap{
+     white-space:nowrap;
+ }
+ .obj{
+ 	position:relative;
+ }
+ 
+ .h_block{
+ 	padding:10px;
+ }
+ .v_block{
+	padding:10px;
+ }
+ 
+ .block {
+ 	float:left;
+ 	padding:10px;
+    background: #d4d6d3  repeat scroll 0 0 rgba(0, 0, 0, 0) !important;
+    position: relative;
+ }
+ .block .block{
+ 	border-bottom:none !important;
+	margin:0px;	
+ }
+ 
+ .val{
+ 	font-size:12px;
+ 	color:black;
+ }
+ 
+ /*
+ .key{
+ 	font-weight:bold;
+	font-size:20px;
+	border-bottom:1px solid grey;
+	}
+ */
+ .key{
+ 	color:#AAAAAA;
+ 	font-size: 12px;
+ 	text-transform:capitalize;
+ }
+  
+ .controls{
+	display:inline-block;
+ }
+ .h_block , .v_block{
+ 	display :table-cell;
+ 	vertical-align: middle;
+ }
+ .h_blocks_container , .v_blocks_container{
+	 display:table;
+ }
+ 
+</style>
 
 <title>Render Json</title>
 </head>
@@ -43,7 +102,7 @@
 				
 				
 				
-			});
+			}).set_template(rj_v(rj_h("date", "playground","game_mode") , rj_h("description","groups"), rj_h("price","duration","level")));
 			header.draw(game_t);
 		});
 		

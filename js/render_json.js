@@ -164,59 +164,6 @@ function set_property(obj , l_keys , val){
 	obj[l_keys[l_keys.length-1]] = val;
 }
 
-function render_obj__rj(obj , l_keys , custom_render, main_obj){
-//	if(!main_obj) main_obj = obj;
-    var ret=create_text_node();
-    if(isinstance(obj,'Object')){
-        ret = create_div(as_unique_key(l_keys) ,  get_as_class_name(l_keys)+" obj");
-        for(var i in obj){
-        	if( str(i).endsWith("__rj") || str(i).endsWith("_id") || isEmpty(obj[i]) ){
-                continue;	
-            }
-            l_keys.push(i);
-            var A =create_div(as_unique_key(l_keys)+"_block" , get_as_class_name(l_keys)+' block');
-        	var B =  create_div(as_unique_key(l_keys)+'_key' , 'key '+get_as_class_name(l_keys)+'_key' , key_as_str(i));
-        	ret.appendChild(A);
-        	A.appendChild(B);
-        	if(!key_type_exists(custom_render , l_keys)){
-	            A.appendChild(render_obj__rj(obj[i],l_keys));
-            }
-            else{
-                A.appendChild(custom_render[as_unique_key(l_keys)](obj[i],l_keys));
-            }
-            l_keys.pop();
-        }
-    }
-    else if(isinstance(obj,'Array')){
-        ret = create_div(as_unique_key(l_keys), "vals "+get_as_class_name(l_keys)+' vals');
-        for(var count=0;count<obj.length;count++){
-            l_keys.push(count);
-            var i = obj[count]; 
-            ret.appendChild(render_obj__rj(i, l_keys));
-            l_keys.pop();
-        }
-    }
-    else if(isinstance(obj, 'Number')){
-    	ret=create_div( as_unique_key(l_keys) , 'val '+get_as_class_name(l_keys), str(obj)+" ");
-    }
-    else if(isinstance(obj, 'String')){
-//        # is img , is link , ext
-        if(obj.endsWith(".png") || obj.endsWith(".jpg")){
-        	ret=create_img(as_unique_key(l_keys) , 'val '+get_as_class_name(l_keys), str(obj));
-        }
-        else{
-        	ret=create_div(as_unique_key(l_keys) ,'val '+get_as_class_name(l_keys) , str(obj));
-        }
-    }
-    
-    else if(isinstance(obj, 'Boolean')){
-        ret= create_div(as_unique_key(l_keys) , 'check val '+get_as_class_name(l_keys) , str(obj));
-    }
- 
-        ret.obj = obj;
-	    ret.l_keys = l_keys.slice();
-    return ret;
-}
 
 function render_controls(controls){
 	var ret= create_div(null , "controls");
@@ -276,13 +223,109 @@ function insert_val(obj , key_set , val, cb){
 	
 };
 
-function get_json_as_dom(obj){
-	var a = null;
-	if(is_string(obj))
-		a = create_div(obj , " block" , obj);
-	else
-		a = render_obj__rj(obj, [], {});
-	return a;
+
+function merge_map(obj1, obj2) {
+	 if(!obj2) return;
+	  for (var p in obj2) {
+	    try {
+	      // Property in destination object set; update its value.
+	      if ( obj2[p].constructor==Object ) {
+	        obj1[p] = merge_map(obj1[p], obj2[p]);
+
+	      } else {
+	        obj1[p] = obj2[p];
+
+	      }
+
+	    } catch(e) {
+	      // Property in destination object not set; create it and set its value.
+	      obj1[p] = obj2[p];
+
+	    }
+	  }
+	  return obj1;
+}
+function rj_h(){
+	 var temp = function(args){
+		 var div = document.createElement('div');
+		 div.className+="h_blocks_container";
+		 div.style.width="100%";
+		 var id_map = {};
+		 div.getElementByKey = function(id){
+			 return id_map[id];
+		 };
+		 div.id_map = id_map;
+		 for (var i=0; i < args.length; i++) {
+			 if(is_string(args[i])){
+				 var a= document.createElement('div');
+				 a.id= args[i]+"_block";
+				 id_map[args[i]] = a;
+				 a.className= args[i]+"_h_block h_block";
+				 a.style.height ="100%";
+				 a.style.cssFloat = "left";
+				 div.appendChild(a);
+			 }
+			 else{// some dom node itself
+				 var new_node = args[i].cloneIt();
+				 div.appendChild(new_node);
+				 merge_map(div.id_map, new_node.id_map);
+			 }
+		 }
+		 return div;
+	};
+	var args = Array.prototype.slice.call(arguments);
+	var div = temp(args);
+	div.cloneIt = function(){
+		var ret = temp(args);
+		ret.cloneIt = div.cloneIt;
+		return ret;
+	};
+	return div;
+	
+}
+
+function rj_v(){	
+	var temp = function(args){
+		var div = document.createElement('div');
+		 div.className+="v_blocks_container";
+		 div.style.width="100%";
+		 var id_map = {};
+		 div.getElementByKey = function(id){
+			 return id_map[id];
+		 };
+		 div.id_map = id_map;
+		 for (var i=0; i < args.length; i++) {
+			 if(is_string(args[i])){
+				 var a= document.createElement('div');
+				 a.id= args[i]+"_block";
+				 id_map[args[i]] = a;
+				 a.className= args[i]+"_v_block v_block";
+				 a.style.width ="100%";
+				 div.appendChild(a);
+			 }
+			 else{// some dom node itself
+				 var new_node = args[i].cloneIt();
+				 div.appendChild(new_node);
+				 merge_map(div.id_map, new_node.id_map);
+			 }
+		 }
+		 return div;
+	};
+	var args = (Array.prototype.slice.call(arguments)).slice();
+	var div = temp(args);
+	div.cloneIt = function(){
+		var ret = temp(args);
+		ret.cloneIt = div.cloneIt;
+		return ret;
+	};
+
+	return div;
+}
+
+function rj_match(a,b){
+	if(a.match(b))
+		return true;
+	return false;
 }
 
 function Render_json(divx , idx, objx, controlsx , callbackx){
@@ -292,12 +335,133 @@ function Render_json(divx , idx, objx, controlsx , callbackx){
 	var controls = controlsx;
 	var is_drawn = false;
 	var callback = callbackx;
+	var template = {};
 	var obj = objx;
 	
 	var _controls = null; //// dom _controls + other properties 
 	var wrapper_div = null; // dom contining the json rendered
 	var num_redrawn = 0;
+	var tabular_data_keyset = {};
 	
+	function get_matched_template(unique_key){
+		for(var i in template){
+			if((unique_key=="" && i=="") || (i!="" && rj_match(unique_key, i))){
+				return template[i].cloneIt();
+			}
+		}
+		return null;
+	}
+	
+	function render_obj__rj(obj , l_keys){
+//		if(!main_obj) main_obj = obj;
+	    var ret=create_text_node();
+	    if(isinstance(obj,'Object')){
+	    	var div_id = as_unique_key(l_keys);
+	    	//check for template
+	    	// ooh yeah , then ret template , and add vall values into appropriate ids in that template
+	    	var template_to_render = get_matched_template(div_id);
+	    	if(template_to_render){
+	    		ret = template_to_render;
+	    		ret.className+= get_as_class_name(l_keys)+" obj";
+	    	}
+	    	else{
+	    		ret = create_div(div_id ,  get_as_class_name(l_keys)+" obj");
+	    	}
+	        for(var i in obj){
+	        	if( str(i).endsWith("__rj") || str(i).endsWith("_id") || isEmpty(obj[i]) ){
+	                continue;	
+	            }
+	            l_keys.push(i);
+	            var u_key = as_unique_key(l_keys);
+	            if(!template_to_render){
+		            var A =create_div(u_key+"_block" , get_as_class_name(l_keys)+' block');
+		        	var B =  create_div(u_key+'_key' , 'key '+get_as_class_name(l_keys)+'_key' , key_as_str(i));
+		        	ret.appendChild(A);
+		        	A.appendChild(B);
+		            A.appendChild(render_obj__rj(obj[i],l_keys));
+	            }
+	            else if(ret.getElementByKey(i)){
+	            	var temp = ret.getElementByKey(i);
+	            	temp.appendChild(create_div(u_key+'_key' , 'key '+get_as_class_name(l_keys)+'_key' , key_as_str(i)));
+		        	temp.appendChild(render_obj__rj(obj[i],l_keys)); //will render into that thing
+	            }
+	            else{
+	            	//unrendered obj
+	            }
+	            l_keys.pop();
+	        }
+	    }
+	    else if(isinstance(obj,'Array')){
+	    	var div_id = as_unique_key(l_keys);
+	    	//check for template
+	    	// ooh yeah , then ret template , and add vall values into appropriate ids in that template
+	    	var template_to_render = get_matched_template(div_id);
+	    	if(template_to_render){
+	    		ret = template_to_render;
+	    	}
+	    	else{
+	    		ret = create_div(as_unique_key(l_keys), "vals "+get_as_class_name(l_keys)+' vals');
+	    	}
+	    	for(var count=0;count<obj.length;count++){
+	            l_keys.push(count);
+	            var i = obj[count]; 
+	            var u_key = as_unique_key(l_keys);
+	            if(!template_to_render || ret.getElementByKey(i)){
+	            	ret.appendChild(render_obj__rj(i, l_keys));
+	            }
+	            else{
+	             	ret.getElementByKey(i).appendChild(render_obj__rj(obj[i],l_keys)); //will render into that thing
+	            }
+	            l_keys.pop();
+	        }
+	    }
+	    else if(isinstance(obj, 'Number')){
+	    	ret=create_div( as_unique_key(l_keys) , 'val '+get_as_class_name(l_keys), str(obj)+" ");
+	    }
+	    else if(isinstance(obj, 'String')){
+//	        # is img , is link , ext
+	        if(obj.endsWith(".png") || obj.endsWith(".jpg")){
+	        	ret=create_img(as_unique_key(l_keys) , 'val '+get_as_class_name(l_keys), str(obj));
+	        }
+	        else{
+	        	ret=create_div(as_unique_key(l_keys) ,'val '+get_as_class_name(l_keys) , str(obj));
+	        }
+	    }
+	    
+	    else if(isinstance(obj, 'Boolean')){
+	        ret= create_div(as_unique_key(l_keys) , 'check val '+get_as_class_name(l_keys) , str(obj));
+	    }
+	 
+        ret.obj = obj;
+	    ret.l_keys = l_keys.slice();
+	    return ret;
+	};//render obj end
+
+	function get_json_as_dom(obj){
+		var a = null;
+		if(is_string(obj))
+			a = create_div(obj , " block" , obj);
+		else
+			a = render_obj__rj(obj, []);
+		return a;
+	};
+	
+	this.set_template =function(templatex , key_pattern){
+		if(!key_pattern){
+			key_pattern=[];
+		}
+		for(var i=0;i<key_pattern.length;i++){
+			if(key_pattern[i]=="*"){
+				key_pattern[i]="[^(__)]*";
+			}
+		}
+		template[as_unique_key(key_pattern)] = templatex;
+		return this;
+	};
+	
+	this.set_tables = function(l_keys){
+		tabular_data_keyset[as_unique_key(l_keys)]= true;
+	};
 	
 	this.into = function(divx){
 		div= divx;
