@@ -248,7 +248,7 @@ function merge_map(obj1, obj2) {
 function rj_h(){
 	 var temp = function(args){
 		 var div = document.createElement('div');
-		 div.className+="h_blocks_container";
+		 div.className+="h_blocks_container ";
 		 div.style.width="100%";
 		 var id_map = {};
 		 div.getElementByKey = function(id){
@@ -260,7 +260,7 @@ function rj_h(){
 				 var a= document.createElement('div');
 				 a.id= args[i]+"_block";
 				 id_map[args[i]] = a;
-				 a.className= args[i]+"_h_block h_block";
+				 a.className= args[i]+"_h_block h_block ";
 				 a.style.height ="100%";
 				 a.style.cssFloat = "left";
 				 div.appendChild(a);
@@ -287,7 +287,7 @@ function rj_h(){
 function rj_v(){	
 	var temp = function(args){
 		var div = document.createElement('div');
-		 div.className+="v_blocks_container";
+		 div.className+="v_blocks_container ";
 		 div.style.width="100%";
 		 var id_map = {};
 		 div.getElementByKey = function(id){
@@ -452,10 +452,10 @@ function Render_json(divx , idx, objx, controlsx , callbackx){
 		}
 		for(var i=0;i<key_pattern.length;i++){
 			if(key_pattern[i]=="*"){
-				key_pattern[i]="[^(__)]*";
+				key_pattern[i]="((?!__).)*";
 			}
 		}
-		template[as_unique_key(key_pattern)] = templatex;
+		template["^"+as_unique_key(key_pattern)+"$"] = templatex;
 		return this;
 	};
 	
