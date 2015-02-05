@@ -1,3 +1,8 @@
+/*
+ * Author : Abhinav
+ * Purpose : Temporary utils.
+ * Date : sometime in nov 14
+ */
 String.prototype.endsWith = function(suffix) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
@@ -30,6 +35,22 @@ function is_string(obj){
 	}
 	return false;
 }
+
+function is_img(obj){
+	if( Object.prototype.toString.call( obj ) === '[object String]' ) {
+		return obj.endsWith(".png") || obj.endsWith(".jpg");
+	}
+	return false;
+}
+
+function is_link(obj){
+	if( Object.prototype.toString.call( obj ) === '[object String]' ) {
+		return obj.indexOf("http://")==0 || obj.indexOf("./") || obj.indexOf("/") ;
+	}
+	return false;
+}
+
+
 
 function isinstance(obj, key){
 	if( Object.prototype.toString.call( obj ) === ('[object '+key+']') ) {
@@ -117,14 +138,39 @@ function key_as_class_name(k){
     return str(k).replace(" ","_");
 }
 
+function create_option(value, text){
+	var option = document.createElement("option");
+    option.value = value;
+    option.text = text;
+    return option;
+}
+function create_radio(name, text , checked) {
+    var radioHtml = '<input type="radio" name="' + name + '"';
+    if ( checked ) {
+        radioHtml += ' checked="checked"';
+    }
+    radioHtml += '/>';
 
-function create_img(id, class_name ,src){
+    var radioFragment = document.createElement('div');
+    radioFragment.innerHTML = radioHtml;
+    radioFragment.appendChild(create_span(null, null, text));
+
+    return radioFragment;
+}				
+
+
+function create_img(id, class_name ,src, width, height){
 	var ret =document.createElement("img");
 	ret.className = class_name;
 	if(id)
 		ret.id = id;
 	if(src)
 		ret.src = src;
+	if(width)
+		ret.style.width = width+'px';
+	if(height)
+		ret.style.height = height+'px';
+	
 	return ret;
 }
 function create_div(id , class_name , html){
@@ -144,6 +190,17 @@ function create_span(id , class_name , html){
 	if(html){
 		ret.appendChild(document.createTextNode(html));
 	}
+	return ret;
+}
+
+function create_link(id , class_name , html , link_href){
+	var ret =document.createElement("a");
+	ret.className = class_name;
+	if(id) ret.id = id;
+	if(html){
+		ret.appendChild(document.createTextNode(html));
+	}
+	ret.setAttribute("href",link_href);
 	return ret;
 }
 
@@ -210,6 +267,22 @@ function render_controls(controls){
 				input.setAttribute("placeholder",name);
 				ret.appendChild(input);
 				break;
+			case "select":
+				var select = document.createElement("select");
+				var i;
+				for(i in val.options){
+					select.appendChild(create_option(val.options[i][0] , val.options[i][1]));// value // text
+				}
+				break;
+			case "radio":
+				// "abc":{name:"cfg",options:["a","b","c"]}
+				var radioGroup = document.createElement("div");
+				var i;
+				for(i in val.options){
+					select.appendChild(create_radio(val.name , val.options[i]));// value // text
+				}
+				break;
+			
 		}
 	}
 	return [ret , x];
@@ -267,6 +340,9 @@ function rj_h(){
 			 }
 			 else{// some dom node itself
 				 var new_node = args[i].cloneIt();
+				 new_node.style.cssFloat = "left";
+				 new_node.style.height ="100%";
+				 new_node.style.width = '';
 				 div.appendChild(new_node);
 				 merge_map(div.id_map, new_node.id_map);
 			 }
@@ -280,6 +356,10 @@ function rj_h(){
 		ret.cloneIt = div.cloneIt;
 		return ret;
 	};
+	div.as = function(class_name){
+		div.className+=(" "+class_name);
+		return div;
+	}
 	return div;
 	
 }
@@ -305,6 +385,8 @@ function rj_v(){
 			 }
 			 else{// some dom node itself
 				 var new_node = args[i].cloneIt();
+				 new_node.height='';
+				 new_node.width="100%";
 				 div.appendChild(new_node);
 				 merge_map(div.id_map, new_node.id_map);
 			 }
@@ -318,7 +400,10 @@ function rj_v(){
 		ret.cloneIt = div.cloneIt;
 		return ret;
 	};
-
+	div.as = function(class_name){
+		div.className+=(" "+class_name);
+		return div;
+	}
 	return div;
 }
 
@@ -343,6 +428,13 @@ function Render_json(divx , idx, objx, controlsx , callbackx){
 	var num_redrawn = 0;
 	var tabular_data_keyset = {};
 	
+	function probe_data_type(value){
+		if(is_string(value)){
+			
+		}
+	}
+	
+	
 	function get_matched_template(unique_key){
 		for(var i in template){
 			if((unique_key=="" && i=="") || (i!="" && rj_match(unique_key, i))){
@@ -353,7 +445,7 @@ function Render_json(divx , idx, objx, controlsx , callbackx){
 	}
 	
 	function render_obj__rj(obj , l_keys){
-//		if(!main_obj) main_obj = obj;
+		//		if(!main_obj) main_obj = obj;
 	    var ret=create_text_node();
 	    if(isinstance(obj,'Object')){
 	    	var div_id = as_unique_key(l_keys);
@@ -374,15 +466,22 @@ function Render_json(divx , idx, objx, controlsx , callbackx){
 	            l_keys.push(i);
 	            var u_key = as_unique_key(l_keys);
 	            if(!template_to_render){
-		            var A =create_div(u_key+"_block" , get_as_class_name(l_keys)+' block');
-		        	var B =  create_div(u_key+'_key' , 'key '+get_as_class_name(l_keys)+'_key' , key_as_str(i));
+	            	var A =create_div(u_key+"_block" , get_as_class_name(l_keys)+' block');
 		        	ret.appendChild(A);
-		        	A.appendChild(B);
-		            A.appendChild(render_obj__rj(obj[i],l_keys));
+		        	if(!is_img(i) &&  !is_link(i)){
+			        	var B =  create_div(u_key+'_key' , 'key '+get_as_class_name(l_keys)+'_key' , key_as_str(i));
+			        	A.appendChild(B);
+		        	}
+		        	else if(is_link(i)){ // should render a link ?
+		        		A.appendChild(create_link(u_key+'_key' , 'link '+get_as_class_name(l_keys)+'_key' , key_as_str(i),obj[i]));
+		        	}
+		        	else{ // could be image
+		        		A.appendChild(render_obj__rj(obj[i],l_keys));
+		        	}
 	            }
 	            else if(ret.getElementByKey(i)){
 	            	var temp = ret.getElementByKey(i);
-	            	temp.appendChild(create_div(u_key+'_key' , 'key '+get_as_class_name(l_keys)+'_key' , key_as_str(i)));
+//	            	temp.appendChild(create_div(u_key+'_key' , 'key '+get_as_class_name(l_keys)+'_key' , key_as_str(i)));
 		        	temp.appendChild(render_obj__rj(obj[i],l_keys)); //will render into that thing
 	            }
 	            else{
@@ -420,7 +519,7 @@ function Render_json(divx , idx, objx, controlsx , callbackx){
 	    }
 	    else if(isinstance(obj, 'String')){
 //	        # is img , is link , ext
-	        if(obj.endsWith(".png") || obj.endsWith(".jpg")){
+	        if(is_img(obj)){
 	        	ret=create_img(as_unique_key(l_keys) , 'val '+get_as_class_name(l_keys), str(obj));
 	        }
 	        else{
@@ -533,7 +632,13 @@ function Render_json(divx , idx, objx, controlsx , callbackx){
 		
 		if(controls && num_redrawn++==0){ // for the first time 
 			var temp = render_controls(controls);
-			wrapper_div.appendChild(temp[0]);
+			var controls_template_div = get_matched_template("__controls__");
+			if(controls_template_div){
+				controls_template_div.appendChild(temp[0]);
+			}
+			else{
+				wrapper_div.appendChild(temp[0]);
+			}
 			_controls = temp[1];
 			_controls.redraw_json = this.redraw; // no needed 
 		}
