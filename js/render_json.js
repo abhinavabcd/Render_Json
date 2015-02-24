@@ -6,6 +6,29 @@
 String.prototype.endsWith = function(suffix) {
     return this.indexOf(suffix, this.length - suffix.length) !== -1;
 };
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+
+
+
+function is_empty(obj) {
+
+	    // null and undefined are "empty"
+	    if (obj == null) return true;
+
+	    // Assume if it has a length property with a non-zero value
+	    // that that property is correct.
+	    if (obj.length > 0)    return false;
+	    if (obj.length === 0)  return true;
+
+	    // Otherwise, does it have any properties of its own?
+	    // Note that this doesn't handle
+	    // toString and valueOf enumeration bugs in IE < 9
+	    for (var key in obj) {
+	        if (hasOwnProperty.call(obj, key)) return false;
+	    }
+
+	    return true;
+};
 
 function is_array(obj){
 	if( Object.prototype.toString.call( obj ) === '[object Array]' ) {
@@ -138,38 +161,183 @@ function key_as_class_name(k){
     return str(k).replace(" ","_");
 }
 
-function create_option(value, text){
+function create_option(value, text, type){
 	var option = document.createElement("option");
     option.value = value;
     option.text = text;
+    if(type)
+    	option.type = type;
     return option;
 }
-function create_radio(name, text , checked) {
-    var radioHtml = '<input type="radio" name="' + name + '"';
-    if ( checked ) {
-        radioHtml += ' checked="checked"';
-    }
-    radioHtml += '/>';
-
-    var radioFragment = document.createElement('div');
-    radioFragment.innerHTML = radioHtml;
+function create_radio(name, value , text, checked, cb) {
+	var radioInput = document.createElement('input');
+	radioInput.setAttribute('type', 'radio');
+	radioInput.setAttribute('name', name);
+	radioInput.setAttribute('value', value);
+	
+	if(checked)
+		radioInput.setAttribute("checked","checked");
+	var radioFragment = document.createElement('div');
+    radioFragment.appendChild(radioInput);
     radioFragment.appendChild(create_span(null, null, text));
-
+    if(cb)
+	    radioInput.onchange = function(){
+	    						cb(radioInput);
+	    					};
     return radioFragment;
-}				
+}
+
+function create_input(id, className, placeholder, type){
+	var inp = document.createElement("input");
+	if(id)
+		inp.id =id;
+	if(className)
+		inp.className = className;
+	if(placeholder)
+		inp.setAttribute("placeholder",placeholder);
+	if(type)
+		inp.setAttribute("type",type);
+	return inp;
+};
+
+function create_checkbox(value , text, checked, cb) {
+	var checkbox_inp = document.createElement('input');
+	checkbox_inp.type = 'checkbox';
+	checkbox_inp.name = text;
+	checkbox_inp.value = value;
+	
+	var radioFragment = document.createElement('div');
+	radioFragment.appendChild(checkbox_inp);
+	var label = create_span(null, "checkbox_label", text);
+    radioFragment.appendChild(label);
+    radioFragment.set_label = function(txt){
+    	label.innerHTML = txt;
+    	checkbox_inp.name1 = txt;
+	};
+    
+    if(cb)
+	    radioFragment.onclick = function(){
+			checkbox_inp.checked = !checkbox_inp.checked;
+    		cb(value, checkbox_inp);
+		};
+    radioFragment.checkbox = checkbox_inp;
+    return radioFragment;
+}
+
+function create_checkbox_options(id, className, options , cb){
+	var div = document.createElement("div");
+	if(div)
+		div.id =id;
+	if(className)
+		div.className = className;
+	
+	var i;
+	var checkbox_div_set = [];
+	var cb2 = function(val){
+		cb(val, checkbox_div_set);
+	};
+	
+	for(i in options){
+		var checkbox_div = create_checkbox(options[i][0], options[i][1], false, cb2);
+		div.appendChild(checkbox_div);
+		checkbox_div_set.push(checkbox_div);
+	}
+	div.cb = cb2;
+	div.checkbox_divs = checkbox_div_set;
+	return div;
+}
 
 
-function create_img(id, class_name ,src, width, height){
+function create_textarea(id, className, placeholder, text){
+	var inp = document.createElement("textarea");
+	if(id)
+		inp.id =id;
+	if(className)
+		inp.className = className;
+	if(placeholder)
+		inp.setAttribute("placeholder",placeholder);
+//	inp.setText(text);
+	return inp;
+};
+
+function create_select_options(id, class_name, options, cb){
+	var select = document.createElement("select");
+	var i;
+	for(i in options){
+		select.appendChild(create_option(options[i][0] , options[i][1]));// value // text
+	}
+	
+    select.onchange = function(){
+		if(cb)
+			cb(select.value, select);
+	};
+	return select;
+
+}
+function create_radio_group(id, className , name, options , cb){
+	var radio_group = document.createElement("div");
+	if(id)
+		radio_group.id =id;
+	if(className)
+		radio_group.className = className;
+	
+	var i;
+	for(i in options){
+		radio_group.appendChild(create_radio(name , options[i][0], options[i][1], false, cb));// value // text
+	}
+	radio_group.cb = cb;
+	return radio_group;
+}
+
+function create_table(id, className, column_names){
+	var table  = document.createElement("table");
+	table.setAttribute("id",id);
+	table.className+=className;
+	if(column_names){
+		var i;
+		var row = document.createElement("tr");
+		table.appendChild(row);
+		for(i in column_names){
+			var th = document.createElement("th");
+			th.innerHTML = column_names[i];
+			row.appendChild(th);
+		}
+	}
+	return table;
+}
+
+function create_row(){
+	var row =document.createElement("tr");
+	var args = Array.prototype.slice.call(arguments);
+	var i;
+	for(i in args){
+		var td = document.createElement("td");
+		if(!args[i])
+			continue;	
+		if(is_string(args[i])){
+			td.innerHTML = args[i];
+		}
+		else if(args[i]){
+			td.appendChild(args[i]);
+		}
+		row.appendChild(td);
+	}
+	return row;
+};
+
+function create_img(id, class_name ,src, width, height, px){
 	var ret =document.createElement("img");
 	ret.className = class_name;
+	if(!px)
+		px = "px";
 	if(id)
 		ret.id = id;
 	if(src)
 		ret.src = src;
 	if(width)
-		ret.style.width = width+'px';
+		ret.style.width = width+px;
 	if(height)
-		ret.style.height = height+'px';
+		ret.style.height = height+px;
 	
 	return ret;
 }
@@ -185,10 +353,25 @@ function create_div(id , class_name , html){
 
 function create_span(id , class_name , html){
 	var ret =document.createElement("span");
-	ret.className = class_name;
+	if(class_name)
+		ret.className = class_name;
 	if(id) ret.id = id;
 	if(html){
 		ret.appendChild(document.createTextNode(html));
+	}
+	return ret;
+}
+function create_button(id, class_name, html){
+	var ret =document.createElement("button");
+	if(class_name)
+		ret.className = class_name;
+	if(id) 
+		ret.id = id;
+	if(html && (is_string(html) || is_number(html))){
+		ret.appendChild(document.createTextNode(html));
+	}
+	else if(html){
+		ret.appendChild(html); //dom element
 	}
 	return ret;
 }
@@ -268,19 +451,15 @@ function render_controls(controls){
 				ret.appendChild(input);
 				break;
 			case "select":
-				var select = document.createElement("select");
-				var i;
-				for(i in val.options){
-					select.appendChild(create_option(val.options[i][0] , val.options[i][1]));// value // text
-				}
+				var select = create_select_options(null, null , val.options);
+				x[key] = select;
+				ret.appendChild(select);
 				break;
 			case "radio":
 				// "abc":{name:"cfg",options:["a","b","c"]}
-				var radioGroup = document.createElement("div");
-				var i;
-				for(i in val.options){
-					select.appendChild(create_radio(val.name , val.options[i]));// value // text
-				}
+				var radio_group = create_radio_group(val.name, val.options, val.cb);
+				ret.appendChild(radioGroup);
+				x[key] = radio_group;
 				break;
 			
 		}
@@ -318,6 +497,85 @@ function merge_map(obj1, obj2) {
 	  }
 	  return obj1;
 }
+
+
+
+function rj_ht(){
+	var args = Array.prototype.slice.call(arguments);
+    var table = document.createElement('table');
+	table.className+="ht_blocks_container ";
+    table.style.width = "100%";
+	var id_map = {};
+	table.getElementByKey = function(id){
+		 return id_map[id];
+	};
+	table.id_map = id_map;
+	var row=document.createElement("tr");
+	table.appendChild(row);
+	 for (var i=0; i < args.length; i++){
+		 var a= document.createElement('td');
+		 if(is_string(args[i])){
+			 a.id= args[i]+"_t_block";
+			 id_map[args[i]] = a;
+			 a.className= args[i]+"_ht_block ht_block ";
+			 a.style.height ="100%";
+		 }
+		 else{// some dom node itself
+			 var new_node = args[i];
+			 a.appendChild(new_node);
+			 merge_map(table.id_map, new_node.id_map);
+		 }
+		 row.appendChild(a);
+	};
+	table.as = function(id,class_name){
+		if(id)
+			table.id = id;
+		if(class_name)
+			table.className+=(" "+class_name);
+		return table;
+	}
+
+	 return table;
+}
+
+function rj_vt(){
+	var args = Array.prototype.slice.call(arguments);
+	var table = document.createElement('table');
+	 table.className+="vt_blocks_container ";
+	 table.style.width="100%";
+	 var id_map = {};
+	 table.getElementByKey = function(id){
+		 return id_map[id];
+	 };
+	 table.id_map = id_map;
+	 for (var i=0; i < args.length; i++) {
+		 var row=document.createElement("tr");
+		 table.appendChild(row);
+		 var a= document.createElement('td');
+		 row.appendChild(a);
+		 if(is_string(args[i])){
+			 a.id= args[i]+"_block";
+			 id_map[args[i]] = a;
+			 a.className= args[i]+"_vt_block vt_block";
+			 a.style.width ="100%";
+		 }
+		 else{// some dom node itself
+			 var new_node = args[i];//table 
+			 a.appendChild(new_node);//append to cell
+			 merge_map(table.id_map, new_node.id_map);
+		 }
+	 }
+     table.as = function(id,class_name){
+			if(id)
+				table.id = id;
+			if(class_name)
+				table.className+=(" "+class_name);
+			return table;
+		}
+
+	 return table;
+};
+
 function rj_h(){
 	 var temp = function(args){
 		 var div = document.createElement('div');
@@ -354,10 +612,15 @@ function rj_h(){
 	div.cloneIt = function(){
 		var ret = temp(args);
 		ret.cloneIt = div.cloneIt;
+		ret.id = div.id;
+		ret.className = div.className;
 		return ret;
 	};
-	div.as = function(class_name){
-		div.className+=(" "+class_name);
+	div.as = function(id,class_name){
+		if(id)
+			div.id = id;
+		if(class_name)
+			div.className+=(" "+class_name);
 		return div;
 	}
 	return div;
@@ -398,10 +661,15 @@ function rj_v(){
 	div.cloneIt = function(){
 		var ret = temp(args);
 		ret.cloneIt = div.cloneIt;
+		ret.id = div.id;
+		ret.className = div.className;
 		return ret;
 	};
-	div.as = function(class_name){
-		div.className+=(" "+class_name);
+	div.as = function(id,class_name){
+		if(id)
+			div.id = id;
+		if(class_name)
+			div.className+=(" "+class_name);
 		return div;
 	}
 	return div;
